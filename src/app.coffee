@@ -1,5 +1,5 @@
 WebSocket = require('ws')
-ws = new WebSocket('ws://localhost:8080')
+ws = new WebSocket('ws://' + window.location.hostname + ':8080')
 Bacon = require('baconjs')
 React = require('react')
 
@@ -44,6 +44,18 @@ Label = React.createClass
   render: ->
     React.DOM.p(null, @state.text)
 
+SendButton = React.createClass  
+  handleClick: ->
+    ws.send JSON.stringify
+      type: 'MACRO'
+      id: '00'
+      action: 'RUN'
+  render: ->
+    React.DOM.button(
+      onClick: @handleClick,
+      'MACRO RUN'
+    )
+
 MessagesField = React.createClass
   getInitialState: ->
     text: ''
@@ -64,7 +76,8 @@ React.renderComponent(
     null,
     TextField(stream: textStream),
     Label(stream: labelStream),
-    MessagesField(stream: messageStream)
+    MessagesField(stream: messageStream),
+    SendButton()
   ),
   document.body
 )
