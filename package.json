@@ -18,12 +18,13 @@
     "url": "https://github.com/insonifi/iq-webnode-app"
   },
   "dependencies": {
-    "browserify": "",
-    "watchify": "",
-    "coffeeify": "",
-    "reactify": "",
-    "react-router": "",
     "baconjs": "",
+    "browserify": "",
+    "coffeeify": "",
+    "react-bootstrap": "^0.12.0",
+    "react-router": "",
+    "reactify": "",
+    "watchify": "",
     "ws": ""
   },
   "devDependencies": {

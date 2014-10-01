@@ -1,12 +1,14 @@
-WebSocket = require('ws')
-ws = new WebSocket('ws://' + window.location.hostname + ':8080')
-Bacon = require('baconjs')
-React = require('react')
+WebSocket = require 'ws'
+ws = new WebSocket 'ws://' + window.location.hostname + ':8080'
+Bacon = require 'baconjs'
+React = require 'react'
+Bootstrap = require 'react-bootstrap'
 
 
 messageStream = new Bacon.Bus
 ws.onmessage = (frame) ->
   message = JSON.parse frame.data
+  console.log message
   messageStream.push message
 
 messageStream = new Bacon.Bus
@@ -47,14 +49,41 @@ Label = React.createClass
 SendButton = React.createClass  
   handleClick: ->
     ws.send JSON.stringify
-      type: 'MACRO'
-      id: '00'
-      action: 'RUN'
+      type: 'CORE'
+      id: ''
+      action: 'GET_CONFIG'
+      params:
+        objtype: 'MAPLAYER'
+        objid: '1'
   render: ->
     React.DOM.button(
       onClick: @handleClick,
       'MACRO RUN'
     )
+
+objectFactory = (config) ->
+  React.createClass
+    getInitialState: ->
+      #type: config.type
+      #id: config.id
+      state: 
+        alarm: false
+      style: 'success'
+    componentWillMount: ->
+      @props.stream
+      .filter ((e) -> 
+        console.log e
+        e.type is config.type and e.id is config.id
+      ).bind @
+      .onValue ((e) ->
+        if config.handlers[e.action] isnt undefined
+            config.handlers[e.action].call @
+        ).bind(@)
+    render: ->
+      Bootstrap.Label(
+        bsStyle: @state.style,
+        [config.type, config.id].join ' '
+      )
 
 MessagesField = React.createClass
   getInitialState: ->
@@ -69,6 +98,15 @@ MessagesField = React.createClass
 
 textStream = new Bacon.Bus
 
+Camera = objectFactory
+  type: 'CAM'
+  id: '1'
+  handlers:
+    'MD_START': -> @setState
+      style: 'warning'
+    'MD_STOP': -> @setState
+      style: 'success'
+      
 labelStream = textStream.map(reverseText)
 
 React.renderComponent(
@@ -77,7 +115,10 @@ React.renderComponent(
     TextField(stream: textStream),
     Label(stream: labelStream),
     MessagesField(stream: messageStream),
-    SendButton()
+    SendButton(),
+    Camera(stream: messageStream)
   ),
   document.body
 )
+
+global.React = React
