@@ -20,16 +20,19 @@
   "dependencies": {
     "baconjs": "",
     "browserify": "",
+    "coffee-reactify": "^1.0.3",
     "coffeeify": "",
     "react-bootstrap": "^0.12.0",
     "react-router": "",
     "reactify": "",
-    "watchify": "",
     "ws": ""
   },
   "devDependencies": {
     "gulp": "",
     "gulp-browserify": "",
-    "gulp-rename": ""
+    "gulp-react": "",
+    "gulp-rename": "",
+    "gulp-watchify": "",
+    "watchify": ""
   }
 }
