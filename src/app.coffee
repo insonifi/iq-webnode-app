@@ -2,29 +2,32 @@
 WebSocket = require 'ws'
 Bacon = require 'baconjs'
 React = require 'react'
+Lazy = require 'lazy.js'
 Bootstrap = require 'react-bootstrap'
 ListGroup = Bootstrap.ListGroup
 ListGroupItem = Bootstrap.ListGroupItem
 Label = Bootstrap.Label
+TabbedArea = Bootstrap.TabbedArea
+TabPane = Bootstrap.TabPane
 
-inputStream = new Bacon.Bus
-outputStream = new Bacon.Bus
 queue = []
+
+CommunicationMixin =
+  input: new Bacon.Bus
+  output: new Bacon.Bus
 
 ws = new WebSocket 'ws://' + window.location.hostname + ':8080'
 ws.onmessage = (frame) ->
   message = JSON.parse frame.data
-  inputStream.push message
+  CommunicationMixin.input.push message
   
-outputStream.onValue (e) ->
-  queue.push(e)
-  console.log('queued', e)
-    
-ws.onopen = -> 
-    outputStream = new Bacon.Bus
-    outputStream.onValue (e) ->
-      ws.send JSON.stringify e
-    outputStream.push e for e in queue
+CommunicationMixin.output.onValue (e) ->
+  ws.send JSON.stringify e
+#ws.onopen = -> 
+#    #outputStream = new Bacon.Bus
+#    CommunicationMixin.output.onValue (e) ->
+#      ws.send JSON.stringify e
+#    #outputStream.push e for e in queue
 
 SendButton = React.createClass  
   handleClick: ->
@@ -56,13 +59,6 @@ objectFactory = (config) ->
         [config.type, config.id].join ' '
       )
 ###
-MessagesField = React.createClass
-  getInitialState: ->
-    text: ''
-  componentWillMount: ->
-    @props.stream.onValue @setState.bind @
-  render: ->
-    React.DOM.p null, [@state.type, @state.id, @state.action].join(' ')
 
 ###
 Camera = (id, stream) ->
@@ -77,6 +73,7 @@ Camera = (id, stream) ->
         style: 'success'
 ###
 Camera = React.createClass
+  mixins: [CommunicationMixin]
   displayName: 'Camera'
   getInitialState: ->
     style: 'default'
@@ -90,47 +87,113 @@ Camera = React.createClass
       'DISARM': -> @setState
         style: 'default'
   componentDidMount: ->
-    @props.stream
+    @input
+    .filter ((e) ->
+      e.type + ':' + e.id is 'CAM:' + @props.id
+    ).bind @
     .onValue ((e) ->
       if @handlers[e.action] isnt undefined
           @handlers[e.action].call @
       ).bind @
   render: ->
-    <Label bsStyle={@state.style}>{@props.id}</Label>
+    <Label bsStyle={@state.style} style={left: @props.x, top: @props.y, position: 'relative'}>
+      {@props.id}
+    </Label>
 
 CamList = React.createClass
+  mixins: [CommunicationMixin]
   displayName: 'CamList'
   getInitialState: -> {}
   componentDidMount: ->
-    @props.stream
+    @input
+    .filter (e) -> e.type is 'CAM'
     .onValue ((e) ->
       if @state[e.id] is undefined
         @state[e.id] = true
         @setState(@state)
-    ).bind @
+      ).bind @
   render: ->
     keys = Object.keys @state
-    <ListGroup>
+    <ListGroup className=".col-xs-4">
       {keys.sort().map ((id) ->
-        <ListGroupItem key={id} xs={3}>
-          <Camera id={id} stream={@props.stream.filter (e) -> e.id is id} />
+        <ListGroupItem key={id}>
+          <Camera id={id} />
         </ListGroupItem>
       ).bind @}
     </ListGroup>
 
+MapLayer = React.createClass
+  displayName: 'MapLayer'
+  getInitialState: -> null
+  render: ->
+    list = @props.config.list
+    <div style={@props.style}>
+      {list.map (o) ->
+        items[o.type]({key: o.id, id: o.id, x: o.x, y: o.y})}
+    </div>
+    
 Map = React.createClass
   displayName: 'Map'
   getInitialState: ->
-    'layer 1': []
-    'another layer': []
+    key: 0
+    layers: [
+      name: 'layer 1'
+      style:
+        background: 'grey'
+      list: [
+        type: 'CAM'
+        id: 1
+        x: 10
+        y: 50
+      ,
+        type: 'CAM'
+        id: 2
+        x: 30
+        y: 80
+      ,
+        type: 'CAM'
+        id: 3
+        x: 70
+        y: 20
+      ]
+    ,
+      name: 'another layer'
+      style:
+        background: 'grey'
+      list: [
+        type: 'CAM'
+        id: 3
+        x: 40
+        y: 20
+      ,
+        type: 'CAM'
+        id: 4
+        x: 100
+        y: 60
+      ]
+    ]
   render: ->
-    <div>wtf</div>
+    i = 0
+    <TabbedArea defaultActiveKey={@state.key}>
+      {@state.layers.map ((layer) ->
+        <TabPane key={i++} tab={layer.name}>
+          <MapLayer config={layer} />
+        </TabPane>
+      ).bind @}
+    </TabbedArea>
+      
     
+items = 
+  CAM: Camera
 React.renderComponent(
   <div>
-    <MessagesField stream={inputStream} />
-    <SendButton />
-    <CamList stream={inputStream.filter (e) -> e.type is 'CAM'} />
+    <div>
+      <SendButton />
+      <CamList />
+    </div>
+    <div>
+      <Map />
+    </div>
   </div>
   document.body
 )

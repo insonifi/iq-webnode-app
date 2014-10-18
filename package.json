@@ -21,10 +21,9 @@
     "baconjs": "",
     "browserify": "",
     "coffee-reactify": "^1.0.3",
-    "coffeeify": "",
+    "lazy.js": "^0.3.2",
     "react-bootstrap": "^0.12.0",
     "react-router": "",
-    "reactify": "",
     "ws": ""
   },
   "devDependencies": {
