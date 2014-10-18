@@ -21,7 +21,8 @@
     "baconjs": "",
     "browserify": "",
     "coffee-reactify": "^1.0.3",
-    "lazy.js": "^0.3.2",
+    "lazy.js": "",
+    "lodash": "^2.4.1",
     "react-bootstrap": "^0.12.0",
     "react-router": "",
     "ws": ""

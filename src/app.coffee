@@ -2,15 +2,19 @@
 WebSocket = require 'ws'
 Bacon = require 'baconjs'
 React = require 'react'
-Lazy = require 'lazy.js'
 Bootstrap = require 'react-bootstrap'
+_ = require 'lodash'
 ListGroup = Bootstrap.ListGroup
 ListGroupItem = Bootstrap.ListGroupItem
 Label = Bootstrap.Label
 TabbedArea = Bootstrap.TabbedArea
 TabPane = Bootstrap.TabPane
-
-queue = []
+Button = Bootstrap.Button
+Panel = Bootstrap.Panel
+Grid = Bootstrap.Grid
+Well = Bootstrap.Well
+Row = Bootstrap.Row
+Col = Bootstrap.Col
 
 CommunicationMixin =
   input: new Bacon.Bus
@@ -23,23 +27,16 @@ ws.onmessage = (frame) ->
   
 CommunicationMixin.output.onValue (e) ->
   ws.send JSON.stringify e
-#ws.onopen = -> 
-#    #outputStream = new Bacon.Bus
-#    CommunicationMixin.output.onValue (e) ->
-#      ws.send JSON.stringify e
-#    #outputStream.push e for e in queue
 
 SendButton = React.createClass  
+  mixins: [CommunicationMixin]
   handleClick: ->
-    outputStream.push
-      type: 'CORE'
-      id: ''
-      action: 'GET_CONFIG'
-      params:
-        objtype: 'CAM'
-        objid: ''
+    @output.push
+      type: 'MACRO'
+      id: '1'
+      action: 'RUN'
   render: ->
-    <button onClick={@handleClick}>MACRO RUN</button>
+    <Button onClick={@handleClick}>MACRO 1</Button>
 ###
 objectFactory = (config) ->
   React.createClass
@@ -58,9 +55,7 @@ objectFactory = (config) ->
         bsStyle: @state.style,
         [config.type, config.id].join ' '
       )
-###
 
-###
 Camera = (id, stream) ->
   objectFactory
     type: 'CAM'
@@ -96,9 +91,11 @@ Camera = React.createClass
           @handlers[e.action].call @
       ).bind @
   render: ->
-    <Label bsStyle={@state.style} style={left: @props.x, top: @props.y, position: 'relative'}>
-      {@props.id}
-    </Label>
+    <div style={left: @props.x, top: @props.y, position: 'relative'}>
+      <Label bsStyle={@state.style}>
+        {@props.id}
+      </Label>
+    </div>
 
 CamList = React.createClass
   mixins: [CommunicationMixin]
@@ -114,22 +111,25 @@ CamList = React.createClass
       ).bind @
   render: ->
     keys = Object.keys @state
-    <ListGroup className=".col-xs-4">
-      {keys.sort().map ((id) ->
-        <ListGroupItem key={id}>
-          <Camera id={id} />
-        </ListGroupItem>
-      ).bind @}
-    </ListGroup>
+    <Panel className="col-xs-1">
+      <ListGroup>
+        {_(keys).sort().map((id) ->
+          <ListGroupItem key={id}>
+            <Camera id={id} />
+          </ListGroupItem>
+        ).value()}
+      </ListGroup>
+    </Panel>
 
 MapLayer = React.createClass
   displayName: 'MapLayer'
   getInitialState: -> null
   render: ->
     list = @props.config.list
-    <div style={@props.style}>
-      {list.map (o) ->
-        items[o.type]({key: o.id, id: o.id, x: o.x, y: o.y})}
+    <div>
+      {_(list).map((o) ->
+        items[o.type]({key: o.id, id: o.id, x: o.x, y: o.y})
+      ).value()}
     </div>
     
 Map = React.createClass
@@ -173,28 +173,55 @@ Map = React.createClass
       ]
     ]
   render: ->
+    layers = @state.layers
     i = 0
-    <TabbedArea defaultActiveKey={@state.key}>
-      {@state.layers.map ((layer) ->
+    <TabbedArea defaultActiveKey={@state.key} className={"row"}>
+      {_(layers).map((layer) ->
         <TabPane key={i++} tab={layer.name}>
           <MapLayer config={layer} />
         </TabPane>
-      ).bind @}
+      ).value()}
     </TabbedArea>
-      
-    
+
+Log = React.createClass
+  mixins: [CommunicationMixin]
+  displayName: 'Log'
+  getInitialState: -> 
+    log: []
+  componentDidMount: ->
+    @input
+    .onValue ((e) ->
+      @state.log.push e
+      @setState
+        log: @state.log.slice -5
+    ).bind @
+  render: ->
+    log = @state.log
+    k = 0
+    <Panel className={"col-md-4"}>
+      <ListGroup>
+        {_(log).map((i) ->
+            <ListGroupItem key={k++}>
+              <Label>{i.type}</Label>{i.id} {i.action}
+            </ListGroupItem>
+        ).value()}
+      </ListGroup>
+    </Panel>
+
 items = 
   CAM: Camera
+  
 React.renderComponent(
-  <div>
-    <div>
+  <Grid>
+    <Row>
       <SendButton />
       <CamList />
-    </div>
-    <div>
+      <Log />
+    </Row>
+    <Row>
       <Map />
-    </div>
-  </div>
+    </Row>
+  </Grid>
   document.body
 )
 global.React = React
