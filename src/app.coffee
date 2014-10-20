@@ -4,13 +4,14 @@ Bacon = require 'baconjs'
 React = require 'react'
 Bootstrap = require 'react-bootstrap'
 _ = require 'lodash'
-ListGroup = Bootstrap.ListGroup
 ListGroupItem = Bootstrap.ListGroupItem
-Label = Bootstrap.Label
+ButtonToolbar = Bootstrap.ButtonToolbar
 TabbedArea = Bootstrap.TabbedArea
+ListGroup = Bootstrap.ListGroup
 TabPane = Bootstrap.TabPane
 Button = Bootstrap.Button
 Panel = Bootstrap.Panel
+Label = Bootstrap.Label
 Grid = Bootstrap.Grid
 Well = Bootstrap.Well
 Row = Bootstrap.Row
@@ -28,15 +29,16 @@ ws.onmessage = (frame) ->
 CommunicationMixin.output.onValue (e) ->
   ws.send JSON.stringify e
 
-SendButton = React.createClass  
+ActionButton = React.createClass  
   mixins: [CommunicationMixin]
   handleClick: ->
     @output.push
-      type: 'MACRO'
-      id: '1'
-      action: 'RUN'
+      msg: @props.msg || "Event"
+      type: @props.type
+      id: @props.id
+      action: @props.action
   render: ->
-    <Button onClick={@handleClick}>MACRO 1</Button>
+    <Button onClick={@handleClick}>{@props.type} {@props.id} {@props.action}</Button>
 ###
 objectFactory = (config) ->
   React.createClass
@@ -91,11 +93,9 @@ Camera = React.createClass
           @handlers[e.action].call @
       ).bind @
   render: ->
-    <div style={left: @props.x, top: @props.y, position: 'relative'}>
-      <Label bsStyle={@state.style}>
-        {@props.id}
-      </Label>
-    </div>
+    <Label bsStyle={@state.style}>
+      {@props.id}
+    </Label>
 
 CamList = React.createClass
   mixins: [CommunicationMixin]
@@ -111,14 +111,10 @@ CamList = React.createClass
       ).bind @
   render: ->
     keys = Object.keys @state
-    <Panel className="col-xs-1">
-      <ListGroup>
-        {_(keys).sort().map((id) ->
-          <ListGroupItem key={id}>
-            <Camera id={id} />
-          </ListGroupItem>
-        ).value()}
-      </ListGroup>
+    <Panel header="Camera states">
+      {_(keys).sort().map((id) ->
+          <Camera id={id} />
+      ).value()}
     </Panel>
 
 MapLayer = React.createClass
@@ -126,9 +122,11 @@ MapLayer = React.createClass
   getInitialState: -> null
   render: ->
     list = @props.config.list
-    <div>
+    <div style={@props.config.style}>
       {_(list).map((o) ->
-        items[o.type]({key: o.id, id: o.id, x: o.x, y: o.y})
+        <div key={o.id} style={left: o.x, top: o.y, position: 'relative'}>
+          {items[o.type]({key: o.id, id: o.id})}
+        </div>
       ).value()}
     </div>
     
@@ -139,43 +137,49 @@ Map = React.createClass
     layers: [
       name: 'layer 1'
       style:
-        background: 'grey'
+        background: 'url(img/exterior.jpg)'
+        'background-size': 'cover'
+        width: 800
+        height: 600
       list: [
         type: 'CAM'
         id: 1
-        x: 10
-        y: 50
+        x: 630
+        y: 320
       ,
         type: 'CAM'
         id: 2
-        x: 30
-        y: 80
+        x: 360
+        y: 390
       ,
         type: 'CAM'
         id: 3
-        x: 70
-        y: 20
+        x: 430
+        y: 210
       ]
     ,
       name: 'another layer'
       style:
-        background: 'grey'
+        background: 'url(img/plan.jpg)'
+        'background-size': 'cover'
+        width: 800
+        height: 600
       list: [
         type: 'CAM'
         id: 3
-        x: 40
-        y: 20
+        x: 615
+        y: 370
       ,
         type: 'CAM'
         id: 4
-        x: 100
+        x: 450
         y: 60
       ]
     ]
   render: ->
     layers = @state.layers
     i = 0
-    <TabbedArea defaultActiveKey={@state.key} className={"row"}>
+    <TabbedArea defaultActiveKey={@state.key}>
       {_(layers).map((layer) ->
         <TabPane key={i++} tab={layer.name}>
           <MapLayer config={layer} />
@@ -198,11 +202,11 @@ Log = React.createClass
   render: ->
     log = @state.log
     k = 0
-    <Panel className={"col-md-4"}>
+    <Panel header="Event log" bsStyle="info">
       <ListGroup>
         {_(log).map((i) ->
             <ListGroupItem key={k++}>
-              <Label>{i.type}</Label>{i.id} {i.action}
+              <Label>{i.params.time}</Label> {i.type} {i.id} {i.action}
             </ListGroupItem>
         ).value()}
       </ListGroup>
@@ -214,12 +218,24 @@ items =
 React.renderComponent(
   <Grid>
     <Row>
-      <SendButton />
-      <CamList />
-      <Log />
+      <Col md={2}>
+        <ActionButton type="MACRO" id="1"} action="RUN" />
+        <ActionButton msg="React" type="TIMER" id="1"} action="DISABLE" />
+        <ActionButton msg="React" type="TIMER" id="1"} action="ENABLE" />
+        <ActionButton type="CAM" id="1"} action="ARM" />
+        <ActionButton type="CAM" id="1"} action="DISARM" />
+      </Col>
+      <Col md={2}>
+        <CamList />
+      </Col>
+      <Col md={4}>
+        <Log />
+      </Col>
     </Row>
     <Row>
-      <Map />
+      <Col md={8}>
+        <Map />
+      </Col>
     </Row>
   </Grid>
   document.body

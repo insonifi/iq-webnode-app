@@ -31,8 +31,6 @@
     "gulp": "",
     "gulp-browserify": "",
     "gulp-react": "",
-    "gulp-rename": "",
-    "gulp-watchify": "",
-    "watchify": ""
+    "gulp-rename": ""
   }
 }
