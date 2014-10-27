@@ -12,7 +12,7 @@ var gulp = require('gulp'),
     }
 gulp.task('enable-watch-mode', function() { watching = true });
 // Basic usage
-gulp.task('default', function() {
+gulp.task('bundle', function() {
   // Single entry point to browserify
   gulp.src(bundlePaths.src, {read: false})
     .pipe(browserify({
@@ -24,3 +24,9 @@ gulp.task('default', function() {
     .pipe(rename('app.js'))
     .pipe(gulp.dest(bundlePaths.dest))
 });
+
+gulp.task('watch', function() {
+  gulp.watch(bundlePaths.src, ['bundle']);
+});
+
+gulp.task('default', ['watch', 'bundle']);

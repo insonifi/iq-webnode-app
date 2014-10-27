@@ -113,18 +113,90 @@ CamList = React.createClass
     keys = Object.keys @state
     <Panel header="Camera states">
       {_(keys).sort().map((id) ->
-          <Camera id={id} />
+          <Camera key={id} id={id} />
       ).value()}
     </Panel>
 
 MapLayer = React.createClass
   displayName: 'MapLayer'
-  getInitialState: -> null
+  getInitialState: ->
+    limit: 5
+    ratio: 1
+    step: 0.03
+    imgX: 0
+    imgY: 0
+    offsetX: 0
+    offsetY: 0
+
+  getDefaultProps: ->
+    width: '800'
+    height: '600'
+    image: ''
+    list: []
+  bound: (val, low, high) ->
+    if val < low then val = low
+    if val > high then val = high
+    val
+  
+  handleWheel: (e) ->
+    if e.target.nodeName isnt 'IMG' then return
+    e.stopPropagation()
+    e.preventDefault()
+    $targetOffset = $(e.target).offset() 
+    x = (e.pageX - $targetOffset.left) / @state.ratio
+    y = (e.pageY - $targetOffset.top) / @state.ratio
+    newratio = @bound (@state.ratio + @state.step * Math.sign(e.deltaY)), 1, @state.limit
+    @setState
+      ratio: newratio
+      imgX: x * (1 - newratio)
+      imgY: y * (1 - newratio)
+  handleDragStart: (e) ->
+    e.preventDefault()
+    @setState
+      dragX: e.clientX
+      dragY: e.clientY
+      drag: true
+  handleDragStop: (e) -> @setState
+    dragX: 0
+    dragY: 0
+    drag: false
+  handleDrag: (e) ->
+    if e.target.nodeName isnt 'IMG' then return
+    e.preventDefault()
+    if @state.drag 
+      $targetOffset = $(e.target).offset() 
+      @setState
+        dragX: e.clientX
+        dragY: e.clientY
+        offsetX: @state.offsetX - (@state.dragX - e.clientX)
+        offsetY: @state.offsetY - (@state.dragY - e.clientY)
   render: ->
-    list = @props.config.list
-    <div style={@props.config.style}>
+    ratio = @state.ratio
+    ix = @state.imgX + @state.offsetX
+    iy = @state.imgY + @state.offsetY
+    divstyle =
+      width: @props.width
+      height: @props.height
+      overflow: 'hidden'
+      position: 'relative'
+    imgstyle =
+      position: 'absolute'
+      left: ix
+      top: iy
+      width: ratio * @props.width
+      #height: ratio * @props.height
+
+    list = @props.list
+    
+    <div style={divstyle} onWheel={@handleWheel}>
+      <img src={@props.image} style={imgstyle}
+        onMouseMove={@handleDrag}
+        onMouseDown={@handleDragStart}
+        onMouseUp={@handleDragStop}
+        onMouseOut={@handleDragStop}
+      />
       {_(list).map((o) ->
-        <div key={o.id} style={left: o.x, top: o.y, position: 'relative'}>
+        <div key={o.id} style={left: ix + o.x * ratio, top: iy + o.y * ratio, zIndex: 2, position: 'absolute'}>
           {items[o.type]({key: o.id, id: o.id})}
         </div>
       ).value()}
@@ -136,11 +208,8 @@ Map = React.createClass
     key: 0
     layers: [
       name: 'layer 1'
-      style:
-        background: 'url(img/exterior.jpg)'
-        'background-size': 'cover'
-        width: 800
-        height: 600
+      image: 'img/exterior.jpg'
+
       list: [
         type: 'CAM'
         id: 1
@@ -159,21 +228,32 @@ Map = React.createClass
       ]
     ,
       name: 'another layer'
-      style:
-        background: 'url(img/plan.jpg)'
-        'background-size': 'cover'
-        width: 800
-        height: 600
+      image: 'img/plan.jpg'
+
       list: [
         type: 'CAM'
         id: 3
-        x: 615
-        y: 370
+        x: 345
+        y: 345
       ,
         type: 'CAM'
         id: 4
-        x: 450
-        y: 60
+        x: 335
+        y: 180
+      ]
+    ,
+      name: 'SVG (vector) layer'
+      image: 'img/idealhouseplan2.svg'
+      list: [
+        type: 'CAM'
+        id: 1
+        x: 160
+        y: 45
+      ,
+        type: 'CAM'
+        id: 2
+        x: 300
+        y: 250
       ]
     ]
   render: ->
@@ -182,7 +262,7 @@ Map = React.createClass
     <TabbedArea defaultActiveKey={@state.key}>
       {_(layers).map((layer) ->
         <TabPane key={i++} tab={layer.name}>
-          <MapLayer config={layer} />
+          <MapLayer width={layer.width} height={layer.height} list={layer.list} image={layer.image}/>
         </TabPane>
       ).value()}
     </TabbedArea>
@@ -214,7 +294,96 @@ Log = React.createClass
 
 items = 
   CAM: Camera
+
+Chart = React.createClass
+  render: ->
+    <svg width={@props.width} height={@props.height}>{@props.children}</svg>
+    
+Line = React.createClass
+  getDefaultProps: ->
+    path: ''
+    color: 'blue'
+    width: 2
+    
+  render: ->
+    <path d={@props.path} stroke={@props.color} strokeWidth={@props.width} fill="none" />
+
+DataSeries = React.createClass
+  getDefaultProps: ->
+    title: ''
+    data: []
+    interpolate: 'linear'
   
+  render: ->
+    yScale = @props.yScale
+    xScale = @props.xScale
+    
+    path = d3.svg.line()
+      .x (d) -> xScale(d.x)
+      .y (d) -> yScale(d.y)
+      .interpolate @props.interpolate
+    
+    <Line path={path @props.data} color={@props.color} />
+    
+LineChart = React.createClass
+  mixins: [CommunicationMixin]
+  getDefaultProps: ->
+    width: 300
+    height: 300
+  getInitialState: ->
+    series: [],
+    moment:
+      x: 0
+      y: 0
+    timer: null
+  
+  componentWillMount: ->
+    @setState 
+      timer: setInterval ((->
+        series = @state.series
+        series.unshift @state.moment
+        @setState
+          series: series.slice 0,30
+          moment:
+            x: @state.moment.x + 1
+            y: 0
+      ).bind @)
+      , @props.interval * 1000 #milliseconds
+        
+  componentDidMount: ->
+    @input
+    .filter (e) -> e.type is 'CAM'
+    .onValue ((e) ->
+      m = @state.moment
+      if e.action is 'MD_START'
+        m.y += 1
+      if e.action is 'MD_STOP'
+        m.y -= 1
+      @setState
+        moment: m
+    ).bind @
+  
+  render: ->
+    data = @props.data
+    size =
+      width: @props.width
+      height: @props.height
+      
+    xValues = _.chain(@state.series).pluck('x').value()
+    yValues = _.chain(@state.series).pluck('y').value()
+    
+    xScale = d3.scale.linear()
+    .domain [_(xValues).min(), _(xValues).max()]
+    .range [@props.width, 0]
+    
+    yScale = d3.scale.linear()
+    .domain [_(yValues).min(), _(yValues).max()]
+    .range [@props.height, 0]
+
+    <Chart width={@props.width} height={@props.height}>
+      <DataSeries data={@state.series} size={size} xScale={xScale} yScale={yScale} ref="series1" color="cornflowerblue" />
+    </Chart>
+
 React.renderComponent(
   <Grid>
     <Row>
@@ -228,13 +397,18 @@ React.renderComponent(
       <Col md={2}>
         <CamList />
       </Col>
-      <Col md={4}>
-        <Log />
-      </Col>
     </Row>
     <Row>
       <Col md={8}>
         <Map />
+      </Col>
+    </Row>
+    <Row>
+      <Col md={5}>
+        <Log />
+      </Col>
+      <Col>
+        <LineChart interval=1 />
       </Col>
     </Row>
   </Grid>
