@@ -20,12 +20,12 @@
   "dependencies": {
     "baconjs": "",
     "browserify": "",
-    "coffee-reactify": "^1.0.3",
-    "lazy.js": "",
-    "lodash": "^2.4.1",
-    "react-bootstrap": "^0.12.0",
+    "coffee-reactify": "",
+    "lodash": "",
+    "react-bootstrap": "",
     "react-router": "",
-    "ws": ""
+    "ws": "",
+    "d3": ""
   },
   "devDependencies": {
     "gulp": "",
