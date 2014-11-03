@@ -1,6 +1,6 @@
 # @cjsx React.DOM 
 _ = require 'lodash'
-d3js = require 'd3'
+#d3js = require 'd3'
 React = require 'react'
 CommunicationMixin = require '../Communication.coffee'
 
@@ -52,12 +52,12 @@ EventChart = React.createClass
         series = @state.series
         series.unshift @state.moment
         @setState
-          series: series.slice 0,30
+          series: series.slice 0, 100
           moment:
             x: @state.moment.x + 1
             y: 0
       ).bind @)
-      , @props.interval * 1000 #milliseconds
+      , @props.interval * 333 #milliseconds
         
   componentDidMount: ->
     @input

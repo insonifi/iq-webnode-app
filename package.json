@@ -22,10 +22,7 @@
     "browserify": "",
     "coffee-reactify": "",
     "lodash": "",
-    "react-bootstrap": "",
-    "react-router": "",
-    "ws": "",
-    "d3": ""
+    "ws": ""
   },
   "devDependencies": {
     "gulp": "",

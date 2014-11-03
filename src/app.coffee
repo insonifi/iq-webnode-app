@@ -6,10 +6,6 @@ EventChart = require './components/EventChart.coffee'
 CamList = require './components/CamList.coffee'
 Log = require './components/Log.coffee'
 Map = require './components/Map.coffee'
-Bootstrap = require 'react-bootstrap'
-Grid = Bootstrap.Grid
-Row = Bootstrap.Row
-Col = Bootstrap.Col
 
 
 map_layers =
@@ -65,33 +61,33 @@ map_layers =
   ]
 
 React.renderComponent(
-  <Grid>
-    <Row>
-      <Col md={2}>
+  <div className="container">
+    <div className="row">
+      <div className="col-md-2">
         <ActionButton type="MACRO" id="1"} action="RUN" />
         <ActionButton msg="React" type="TIMER" id="1"} action="DISABLE" />
         <ActionButton msg="React" type="TIMER" id="1"} action="ENABLE" />
         <ActionButton type="CAM" id="1"} action="ARM" />
         <ActionButton type="CAM" id="1"} action="DISARM" />
-      </Col>
-      <Col md={2}>
+      </div>
+      <div className="col-md-2">
         <CamList />
-      </Col>
-    </Row>
-    <Row>
-      <Col md={8}>
+      </div>
+    </div>
+    <div className="row">
+      <div className="col-md-8">
         <Map layers={map_layers}/>
-      </Col>
-    </Row>
-    <Row>
-      <Col md={5}>
+      </div>
+    </div>
+    <div className="row">
+      <div className="col-md-5">
         <Log />
-      </Col>
-      <Col>
+      </div>
+      <div className="col-md-4">
         <EventChart interval=1 />
-      </Col>
-    </Row>
-  </Grid>
+      </div>
+    </div>
+  </div>
   document.body
 )
 global.React = React

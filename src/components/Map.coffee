@@ -2,10 +2,6 @@
 _ = require 'lodash'
 React = require 'react'
 Camera = require './Camera.coffee'
-Bootstrap = require 'react-bootstrap'
-Panel = Bootstrap.Panel
-TabbedArea = Bootstrap.TabbedArea
-TabPane = Bootstrap.TabPane
 
 items = 
   CAM: Camera
@@ -100,16 +96,25 @@ Map = React.createClass
   getDefaultProps: ->
     layers: []
   getInitialState: ->
-    key: 0
+    layers = @props.layers
+    active: if layers.length isnt 0 then layers[0].name else ''
+  handleClick: (e) ->
+    @setState
+      active: e.target.text
   render: ->
     layers = @props.layers
+    active = @state.active
     i = 0
-    <TabbedArea defaultActiveKey={@state.key}>
-      {_(layers).map((layer) ->
-        <TabPane key={i++} tab={layer.name}>
-          <MapLayer width={layer.width} height={layer.height} list={layer.list} image={layer.image}/>
-        </TabPane>
-      ).value()}
-    </TabbedArea>
+    <div>
+      <ol className="nav nav-tabs">
+        {_(layers).map(((layer) ->
+          styleClass = if active is layer.name then 'active' else ''
+          <li key={i++} className={styleClass}><a href="#" onClick={@handleClick}>{layer.name}</a></li>
+        ).bind(@)).value()}
+      </ol>
+      {_(layers).where({name: active}).map (layer)->
+          <MapLayer width={layer.width} height={layer.height} list={layer.list} image={layer.image}/>      
+      }
+    </div>
   
 module.exports = Map

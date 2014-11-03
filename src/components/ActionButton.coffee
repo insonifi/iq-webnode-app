@@ -1,8 +1,6 @@
 # @cjsx React.DOM 
 React = require 'react'
 CommunicationMixin = require '../Communication.coffee'
-Bootstrap = require 'react-bootstrap'
-Button = Bootstrap.Button
 
 ActionButton = React.createClass  
   mixins: [CommunicationMixin]
@@ -13,6 +11,6 @@ ActionButton = React.createClass
       id: @props.id
       action: @props.action
   render: ->
-    <Button onClick={@handleClick}>{@props.type} {@props.id} {@props.action}</Button>
+    <button className="btn btn-default" onClick={@handleClick}>{@props.type} {@props.id} {@props.action}</button>
     
 module.exports = ActionButton

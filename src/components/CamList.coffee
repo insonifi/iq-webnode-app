@@ -3,8 +3,6 @@ _ = require 'lodash'
 React = require 'react'
 CommunicationMixin = require '../Communication.coffee'
 Camera = require './Camera.coffee'
-Bootstrap = require 'react-bootstrap'
-Panel = Bootstrap.Panel
 
 CamList = React.createClass
   mixins: [CommunicationMixin]
@@ -20,10 +18,13 @@ CamList = React.createClass
       ).bind @
   render: ->
     keys = Object.keys @state
-    <Panel header="Camera states">
-      {_(keys).sort().map((id) ->
-          <Camera key={id} id={id} />
-      ).value()}
-    </Panel>
+    <div className="panel panel-primary">
+      <div className="panel-heading">Camera states</div>
+      <div className="panel-body">
+        {_(keys).sort().map((id) ->
+            <Camera key={id} id={id} />
+        ).value()}
+      </div>
+    </div>
     
 module.exports = CamList
