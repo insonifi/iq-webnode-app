@@ -19,15 +19,15 @@
   },
   "dependencies": {
     "baconjs": "",
-    "browserify": "",
-    "coffee-reactify": "",
     "lodash": "",
-    "ws": ""
+    "ws": "",
+    "react": ""
   },
   "devDependencies": {
     "gulp": "",
-    "gulp-browserify": "",
-    "gulp-react": "",
-    "gulp-rename": ""
+    "browserify": "",
+    "gulp-rename": "",
+    "coffee-reactify": "",
+    "vinyl-source-stream": ""
   }
 }

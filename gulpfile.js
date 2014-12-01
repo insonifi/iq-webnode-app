@@ -1,28 +1,23 @@
 var gulp = require('gulp'),
-    browserify = require('gulp-browserify'),
-    react = require('gulp-react'),
+    browserify = require('browserify'),
     rename = require("gulp-rename"),
+    source = require('vinyl-source-stream'),
     watching = false,
     bundlePaths = {
       src: [
-          'src/app.coffee'
+          './src/app.coffee'
           //"!client/js/**/lib/**" // Don't bundle libs
       ],
-      dest:'build/'
+      dest:'./build/'
     }
 gulp.task('enable-watch-mode', function() { watching = true });
-// Basic usage
-gulp.task('bundle', function() {
-  // Single entry point to browserify
-  gulp.src(bundlePaths.src, {read: false})
-    .pipe(browserify({
-      transform: ['coffee-reactify'],
-      extensions: ['.coffee'],
-      debug: true
-    }))
-    .pipe(react())
-    .pipe(rename('app.js'))
-    .pipe(gulp.dest(bundlePaths.dest))
+gulp.task('bundle', function () {
+  return browserify(bundlePaths.src)
+          .transform('coffee-reactify')
+          .bundle()
+          .pipe(source('bundle.js'))
+          .pipe(rename('app.js'))
+          .pipe(gulp.dest(bundlePaths.dest))
 });
 
 gulp.task('watch', function() {
